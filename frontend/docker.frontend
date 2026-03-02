@@ -1,0 +1,4 @@
+FROM nginx:alpine
+# Copy your main.html and main.css into the default nginx path
+COPY ./frontend /usr/share/nginx/html
+EXPOSE 80

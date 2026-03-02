@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexLog Dashboard</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <!-- Auth Screens -->
+    <div id="authScreen" class="auth-container">
+        <!-- Login Card -->
+        <div id="loginCard" class="auth-card">
+            <div class="logo">Flex<span>Log</span></div>
+            <p class="subtitle">Enter your credentials to access FlexLog.</p>
+            <div class="form-group" style="text-align: left;">
+                <label>Email</label>
+                <input type="email" class="form-input" placeholder="email@example.com">
+            </div>
+            <div class="form-group" style="text-align: left;">
+                <label>Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" onclick="showDashboard()">Login</button>
+            <div class="auth-footer">
+                Don't have an account? <span onclick="toggleAuth()">Create Account</span>
+            </div>
+        </div>
+
+        <!-- Signup Card -->
+        <div id="signupCard" class="auth-card hidden">
+            <div class="logo">Flex<span>Log</span></div>
+            <p class="subtitle">Enter your credentials to access FlexLog.</p>
+            <div class="form-group" style="text-align: left;">
+                <label>Username</label>
+                <input type="text" class="form-input" placeholder="flexuser">
+            </div>
+            <div class="form-group" style="text-align: left;">
+                <label>Email</label>
+                <input type="email" class="form-input" placeholder="email@example.com">
+            </div>
+            <div class="form-group" style="text-align: left;">
+                <label>Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; text-align: left;">
+                <input type="checkbox" style="margin-top: 4px;">
+                <p style="font-size: 10px; color: var(--text-muted);">By creating an account, you consent to FlexLog securely storing your profile and fitness activity data to provide analytics and routine tracking.</p>
+            </div>
+            <button class="btn-primary" onclick="showDashboard()">Sign Up</button>
+            <div class="auth-footer">
+                Already have an account? <span onclick="toggleAuth()">Login</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardScreen" class="hidden">
+        <nav class="navbar">
+            <div class="logo">Flex<span>Log</span></div>
+        </nav>
+
+        <main class="dashboard-container">
+            <section class="calendar-card">
+                <div class="calendar-header">
+                    <h2 id="monthLabel">February</h2>
+                    <div class="calendar-controls">
+                        <button class="btn-text" id="expandBtn" onclick="toggleCalendar()">Expand</button>
+                        <div class="nav-arrows">
+                            <span id="prevMonthBtn" onclick="changeMonth(-1)">&lt;</span>
+                            <span id="nextMonthBtn" onclick="changeMonth(1)">&gt;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="calendar-days" id="calendarGrid"></div>
+            </section>
+
+            <div class="main-content-grid">
+                <section class="workout-area">
+                    <h1><span id="selectedDayLabel">Today</span> <span class="routine-name" id="routineNameLabel">Leg Day</span></h1>
+                    <div class="exercise-list" id="exerciseList">
+                        <!-- Dynamic exercises will be injected here -->
+                    </div>
+                    <button class="btn-primary" onclick="openModal('addExerciseModal')">Add Exercise</button>
+                </section>
+
+                <aside class="sidebar">
+                    <div class="side-card user-profile">
+                        <div class="avatar"></div>
+                        <div>
+                            <p>Flex User</p>
+                            <button class="btn-link" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <h4>Daily Total Volume:</h4>
+                        <div style="height: 60px; display: flex; align-items: flex-end; gap: 6px; padding-top: 10px;">
+                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 60%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 30%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 80%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 50%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 90%; background: var(--accent-blue); border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4>Volume Progress</h4>
+                            <select style="background: none; border: none; color: var(--text-muted); font-size: 10px; outline: none;">
+                                <option>Weekly</option>
+                            </select>
+                        </div>
+                        <div style="height: 100px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; overflow: hidden;">
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <path d="M0,80 Q25,60 50,70 T100,20" fill="none" stroke="var(--accent-blue)" stroke-width="2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4>Weekly Schedule</h4>
+                            <button class="btn-link" onclick="openModal('editRoutineModal')">Edit ✎</button>
+                        </div>
+                        <ul class="schedule-list">
+                            <li><span>Monday</span> <span class="val">Push Day</span></li>
+                            <li><span>Tuesday</span> <span class="val">Pull Day</span></li>
+                            <li><span>Wednesday</span> <span class="val highlight">Leg Day</span></li>
+                            <li><span>Thursday</span> <span class="val">Rest Day</span></li>
+                            <li><span>Friday</span> <span class="val">Upper Day</span></li>
+                            <li><span>Saturday</span> <span class="val">Lower Day</span></li>
+                            <li><span>Sunday</span> <span class="val">Rest Day</span></li>
+                        </ul>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="addExerciseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Exercise</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Exercise Name</label>
+                    <input type="text" id="addExerciseName" class="form-input" placeholder="Exercise Name">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" id="addExerciseSets" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Reps</label>
+                    <input type="number" id="addExerciseReps" class="form-input" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="addExercise()">Add</button>
+                <button class="btn-secondary" onclick="closeModal('addExerciseModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editExerciseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Exercise</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Old Exercise</label>
+                    <input type="text" class="form-input" value="Bench Press">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" class="form-input" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Rep</label>
+                    <input type="number" class="form-input" value="10">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>New Exercise</label>
+                    <input type="text" class="form-input" placeholder="Exercise Name">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Rep</label>
+                    <input type="number" class="form-input" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeModal('editExerciseModal')">Apply</button>
+                <button class="btn-secondary" onclick="closeModal('editExerciseModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editRoutineModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; position: relative;">
+            <div class="modal-header">
+                <h2>Edit Weekly Routine</h2>
+            </div>
+            <div id="routineDaysList">
+                <!-- Days will be dynamically rendered here -->
+            </div>
+
+            <!-- Exercise Manager Overlay (Hidden by default) -->
+            <div id="exerciseManager" class="exercise-manager-overlay hidden">
+                <div class="modal-header">
+                    <h2 id="managerDayTitle">Monday Exercises</h2>
+                </div>
+                <div class="exercise-manager-list" id="managerExerciseList">
+                    <!-- Exercises for the day will be listed here -->
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <h4 style="font-size: 12px; margin-bottom: 10px; color: var(--text-muted);">Add New Exercise</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 60px 60px; gap: 10px;">
+                        <input type="text" id="mgrNewExName" class="form-input" placeholder="Name" style="padding: 8px;">
+                        <input type="number" id="mgrNewExSets" class="form-input" placeholder="Sets" style="padding: 8px;">
+                        <input type="number" id="mgrNewExReps" class="form-input" placeholder="Reps" style="padding: 8px;">
+                    </div>
+                    <button class="btn-primary" style="margin-top: 10px; padding: 8px;" onclick="addExerciseToManager()">Add Exercise</button>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 0;">
+                    <button class="btn-primary" onclick="saveExerciseManager()">Save</button>
+                    <button class="btn-secondary" onclick="closeExerciseManager()">Close</button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="saveWeeklyRoutine()">Confirm</button>
+                <button class="btn-secondary" onclick="closeModal('editRoutineModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let viewDate = new Date();
+        let selectedDate = new Date();
+        let calendarExpanded = false;
+        
+        const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        // Mock Data
+        const routines = {
+            'Monday': { name: 'Push Day', exercises: [{ name: 'Bench Press', sets: 3, reps: 10 }, { name: 'Shoulder Press', sets: 3, reps: 12 }] },
+            'Tuesday': { name: 'Pull Day', exercises: [{ name: 'Deadlift', sets: 3, reps: 5 }, { name: 'Pull Ups', sets: 3, reps: 8 }] },
+            'Wednesday': { name: 'Leg Day', exercises: [{ name: 'Squats', sets: 3, reps: 10 }, { name: 'Leg Press', sets: 3, reps: 12 }] },
+            'Thursday': { name: 'Rest Day', exercises: [] },
+            'Friday': { name: 'Upper Day', exercises: [{ name: 'Dips', sets: 3, reps: 12 }, { name: 'Rows', sets: 3, reps: 10 }] },
+            'Saturday': { name: 'Lower Day', exercises: [{ name: 'Lunges', sets: 3, reps: 12 }, { name: 'Calf Raises', sets: 3, reps: 15 }] },
+            'Sunday': { name: 'Rest Day', exercises: [] }
+        };
+
+        function toggleAuth() {
+            document.getElementById('loginCard').classList.toggle('hidden');
+            document.getElementById('signupCard').classList.toggle('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            renderCalendar();
+            renderExercises();
+        }
+
+        function logout() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+        }
+
+        function openModal(id) {
+            if (id === 'editRoutineModal') {
+                renderRoutineDays();
+            }
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Routine Modal Logic
+        let editingDay = null;
+        let tempExercises = [];
+
+        function renderRoutineDays() {
+            const list = document.getElementById('routineDaysList');
+            list.innerHTML = '';
+            weekDays.forEach(day => {
+                const routine = routines[day];
+                const row = document.createElement('div');
+                row.className = 'routine-day-row';
+                row.innerHTML = `
+                    <span class="routine-day-name">${day}</span>
+                    <div class="routine-day-controls">
+                        <input type="text" class="input-small routine-name-input" 
+                               data-day="${day}" value="${routine.name}" 
+                               oninput="validateWordCount(this)"
+                               placeholder="Routine Name">
+                        <button class="btn-exercises" onclick="openExerciseManager('${day}')">
+                            Exercises 
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function validateWordCount(input) {
+            const words = input.value.trim().split(/\s+/);
+            if (words.length > 20) {
+                input.value = words.slice(0, 20).join(' ');
+            }
+        }
+
+        function openExerciseManager(day) {
+            editingDay = day;
+            tempExercises = JSON.parse(JSON.stringify(routines[day].exercises));
+            document.getElementById('managerDayTitle').innerText = `${day} Exercises`;
+            renderManagerExercises();
+            document.getElementById('exerciseManager').classList.remove('hidden');
+        }
+
+        function renderManagerExercises() {
+            const list = document.getElementById('managerExerciseList');
+            list.innerHTML = '';
+            tempExercises.forEach((ex, index) => {
+                const item = document.createElement('div');
+                item.className = 'exercise-manager-item';
+                item.innerHTML = `
+                    <div style="flex: 1;">
+                        <input type="text" class="input-small" value="${ex.name}" onchange="updateTempEx(${index}, 'name', this.value)" style="width: 100%; margin-bottom: 4px;">
+                        <div style="display: flex; gap: 5px;">
+                            <input type="number" class="input-small" value="${ex.sets}" onchange="updateTempEx(${index}, 'sets', this.value)" style="width: 60px;">
+                            <input type="number" class="input-small" value="${ex.reps}" onchange="updateTempEx(${index}, 'reps', this.value)" style="width: 60px;">
+                        </div>
+                    </div>
+                    <button class="btn-link" onclick="deleteTempEx(${index})" style="color: #ff4444; font-size: 18px; padding: 10px;">&times;</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateTempEx(index, field, value) {
+            tempExercises[index][field] = value;
+        }
+
+        function deleteTempEx(index) {
+            tempExercises.splice(index, 1);
+            renderManagerExercises();
+        }
+
+        function addExerciseToManager() {
+            const name = document.getElementById('mgrNewExName').value;
+            const sets = document.getElementById('mgrNewExSets').value;
+            const reps = document.getElementById('mgrNewExReps').value;
+            if (!name) return;
+            tempExercises.push({ name, sets, reps });
+            document.getElementById('mgrNewExName').value = '';
+            document.getElementById('mgrNewExSets').value = '';
+            document.getElementById('mgrNewExReps').value = '';
+            renderManagerExercises();
+        }
+
+        function saveExerciseManager() {
+            routines[editingDay].exercises = tempExercises;
+            closeExerciseManager();
+            renderExercises(); // Update main dashboard if needed
+        }
+
+        function closeExerciseManager() {
+            document.getElementById('exerciseManager').classList.add('hidden');
+            editingDay = null;
+        }
+
+        function saveWeeklyRoutine() {
+            const inputs = document.querySelectorAll('.routine-name-input');
+            inputs.forEach(input => {
+                const day = input.dataset.day;
+                routines[day].name = input.value;
+            });
+            closeModal('editRoutineModal');
+            renderExercises();
+            // Update sidebar schedule
+            updateSidebarSchedule();
+        }
+
+        function updateSidebarSchedule() {
+            const list = document.querySelector('.schedule-list');
+            list.innerHTML = '';
+            weekDays.forEach(day => {
+                const routine = routines[day];
+                const isToday = day === weekDays[selectedDate.getDay()];
+                list.innerHTML += `<li><span>${day}</span> <span class="val ${isToday ? 'highlight' : ''}">${routine.name}</span></li>`;
+            });
+        }
+
+        function toggleCalendar() {
+            calendarExpanded = !calendarExpanded;
+            const btn = document.getElementById('expandBtn');
+            btn.innerText = calendarExpanded ? 'Collapse' : 'Expand';
+            renderCalendar();
+        }
+
+        function changeMonth(delta) {
+            viewDate.setMonth(viewDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function handleDateClick(date) {
+            selectedDate = new Date(date);
+            renderCalendar();
+            renderExercises();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthLabel = document.getElementById('monthLabel');
+            grid.innerHTML = '';
+            
+            monthLabel.innerText = `${months[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+
+            if (calendarExpanded) {
+                // Monthly View
+                const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+                const lastDay = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+                
+                // Start from the Sunday before the first day of the month
+                const start = new Date(firstDay);
+                start.setDate(firstDay.getDate() - firstDay.getDay());
+
+                // End at the Saturday after the last day of the month
+                const end = new Date(lastDay);
+                end.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+
+                let curr = new Date(start);
+                while (curr <= end) {
+                    const d = new Date(curr);
+                    const isOtherMonth = d.getMonth() !== viewDate.getMonth();
+                    const isActive = d.toDateString() === new Date().toDateString();
+                    const isSelected = d.toDateString() === selectedDate.toDateString();
+                    
+                    const dayEl = document.createElement('div');
+                    dayEl.className = `day ${isOtherMonth ? 'other-month' : ''} ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`;
+                    dayEl.onclick = () => handleDateClick(d);
+                    dayEl.innerHTML = `<span>${weekDays[d.getDay()].substring(0, 3)}</span><div class="date">${d.getDate()}</div>`;
+                    grid.appendChild(dayEl);
+                    
+                    curr.setDate(curr.getDate() + 1);
+                }
+                grid.style.gridTemplateRows = 'auto';
+            } else {
+                // Weekly View (centered around selectedDate or current week)
+                const start = new Date(viewDate);
+                start.setDate(viewDate.getDate() - viewDate.getDay());
+
+                for(let i=0; i<7; i++) {
+                    const d = new Date(start); d.setDate(start.getDate() + i);
+                    const isActive = d.toDateString() === new Date().toDateString();
+                    const isSelected = d.toDateString() === selectedDate.toDateString();
+                    
+                    const dayEl = document.createElement('div');
+                    dayEl.className = `day ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`;
+                    dayEl.onclick = () => handleDateClick(d);
+                    dayEl.innerHTML = `<span>${weekDays[d.getDay()].substring(0, 3)}</span><div class="date">${d.getDate()}</div>`;
+                    grid.appendChild(dayEl);
+                }
+                grid.style.gridTemplateRows = '1fr';
+            }
+        }
+
+        function renderExercises() {
+            const list = document.getElementById('exerciseList');
+            const dayLabel = document.getElementById('selectedDayLabel');
+            const routineLabel = document.getElementById('routineNameLabel');
+            
+            const dayName = weekDays[selectedDate.getDay()];
+            const routine = routines[dayName];
+            
+            dayLabel.innerText = selectedDate.toDateString() === new Date().toDateString() ? 'Today' : dayName;
+            routineLabel.innerText = routine.name;
+            
+            list.innerHTML = '';
+            
+            if (routine.exercises.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No exercises scheduled for today.</p>';
+                return;
+            }
+
+            routine.exercises.forEach((ex, index) => {
+                const card = document.createElement('div');
+                card.className = 'exercise-card';
+                card.innerHTML = `
+                    <div class="exercise-info">
+                        <div class="exercise-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
+                        </div>
+                        <div class="exercise-details">
+                            <h3>${ex.name}</h3>
+                            <p>${ex.sets} Sets • ${ex.reps} Reps</p>
+                        </div>
+                    </div>
+                    <div class="exercise-actions" onclick="toggleDropdown(event, ${index})">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        <div class="dropdown-menu" id="dropdown-${index}">
+                            <div class="dropdown-item" onclick="openEditModal(${index})">Edit</div>
+                            <div class="dropdown-item delete" onclick="deleteExercise(${index})">Delete</div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function toggleDropdown(event, index) {
+            event.stopPropagation();
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            allDropdowns.forEach(d => {
+                if (d.id !== `dropdown-${index}`) d.classList.remove('show');
+            });
+            document.getElementById(`dropdown-${index}`).classList.toggle('show');
+        }
+
+        window.onclick = () => {
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            allDropdowns.forEach(d => d.classList.remove('show'));
+        };
+
+        function openEditModal(index) {
+            const dayName = weekDays[selectedDate.getDay()];
+            const ex = routines[dayName].exercises[index];
+            // Populate edit modal (assuming we have one or using the existing one)
+            // For this demo, we'll just show the modal
+            openModal('editExerciseModal');
+        }
+
+        function deleteExercise(index) {
+            const dayName = weekDays[selectedDate.getDay()];
+            routines[dayName].exercises.splice(index, 1);
+            renderExercises();
+        }
+
+        function addExercise() {
+            const name = document.getElementById('addExerciseName').value;
+            const sets = document.getElementById('addExerciseSets').value;
+            const reps = document.getElementById('addExerciseReps').value;
+            
+            if (!name) return alert('Please enter an exercise name');
+            
+            const dayName = weekDays[selectedDate.getDay()];
+            routines[dayName].exercises.push({ name, sets, reps });
+            
+            // Reset and close
+            document.getElementById('addExerciseName').value = '';
+            document.getElementById('addExerciseSets').value = '';
+            document.getElementById('addExerciseReps').value = '';
+            closeModal('addExerciseModal');
+            renderExercises();
+        }
+
+        function toggleAddExercise() {
+            // This was for the routine modal, keeping it simple
+            alert('Exercise Added to Routine!');
+        }
+
+        // Initialize
+        window.onload = () => {
+            // Start on login screen
+        };
+    </script>
+</body>
+</html>
+

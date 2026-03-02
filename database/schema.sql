@@ -1,0 +1,45 @@
+-- 1. USERS Table: Secure User Onboarding [cite: 6]
+CREATE TABLE IF NOT EXISTS USERS (
+    user_ID SERIAL PRIMARY KEY,
+    user_NAME VARCHAR(100) NOT NULL,
+    user_EMAIL VARCHAR(150) UNIQUE NOT NULL,
+    user_PASS VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. ROUTINE_TEMPLATES (RT): One user to many weekly templates [cite: 135]
+CREATE TABLE IF NOT EXISTS ROUTINE_TEMPLATES (
+    RT_ID SERIAL PRIMARY KEY,
+    RT_NAME VARCHAR(100) NOT NULL, -- e.g., 'Push Day'
+    day_of_week VARCHAR(20) NOT NULL, -- e.g., 'Monday'
+    user_ID INTEGER REFERENCES USERS(user_ID) ON DELETE CASCADE
+);
+
+-- 3. EXERCISES_TEMPLATES (ET): One template to many exercises [cite: 138]
+CREATE TABLE IF NOT EXISTS EXERCISES_TEMPLATES (
+    ET_ID SERIAL PRIMARY KEY,
+    ET_NAME VARCHAR(100) NOT NULL,
+    target_SETS INTEGER NOT NULL,
+    target_REPS INTEGER NOT NULL,
+    RT_ID INTEGER REFERENCES ROUTINE_TEMPLATES(RT_ID) ON DELETE CASCADE
+);
+
+-- 4. DAILY_LOGS: Capture and Log Activity [cite: 7, 137]
+CREATE TABLE IF NOT EXISTS DAILY_LOGS (
+    logs_ID SERIAL PRIMARY KEY,
+    user_ID INTEGER REFERENCES USERS(user_ID) ON DELETE CASCADE,
+    workout_date DATE NOT NULL,
+    RT_NAME VARCHAR(100), -- Snapshot of the template name used
+    is_completed BOOLEAN DEFAULT FALSE
+);
+
+-- 5. DAILY_EXERCISES (DE): Records individual exercise performance [cite: 139]
+CREATE TABLE IF NOT EXISTS DAILY_EXERCISES (
+    DE_ID SERIAL PRIMARY KEY,
+    logs_ID INTEGER REFERENCES DAILY_LOGS(logs_ID) ON DELETE CASCADE,
+    DE_NAME VARCHAR(100) NOT NULL,
+    actual_SETS INTEGER,
+    actual_REPS INTEGER,
+    total_volume INTEGER, -- Calculated as Sets * Reps 
+    status VARCHAR(50) DEFAULT 'Pending' -- To trigger Success Indicator 
+);
