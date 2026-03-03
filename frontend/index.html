@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexLog Dashboard</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Auth Screens -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-card" id="loginCard">
+            <div class="logo" style="margin-bottom: 30px; justify-content: center;">Flex<span>Log</span></div>
+            <h2 style="margin-bottom: 10px;">Welcome Back</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Log in to continue your progress</p>
+            
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="form-input" placeholder="name@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            
+            <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="login()">Log In</button>
+            <p style="margin-top: 20px; font-size: 14px; color: var(--text-muted);">
+                Don't have an account? <a href="#" class="btn-link" onclick="toggleAuth()">Sign Up</a>
+            </p>
+        </div>
+
+        <div class="auth-card hidden" id="signupCard">
+            <div class="logo" style="margin-bottom: 30px; justify-content: center;">Flex<span>Log</span></div>
+            <h2 style="margin-bottom: 10px;">Create Account</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Start tracking your fitness journey</p>
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" class="form-input" placeholder="username">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="form-input" placeholder="name@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            
+            <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="signup()">Sign Up</button>
+            <p style="margin-top: 20px; font-size: 14px; color: var(--text-muted);">
+                Already have an account? <a href="#" class="btn-link" onclick="toggleAuth()">Log In</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardScreen" class="hidden">
+        <nav class="navbar">
+            <div class="logo">Flex<span>Log</span></div>
+        </nav>
+
+        <main class="dashboard-container">
+            <section class="calendar-card">
+                <div class="calendar-header">
+                    <h2 id="monthLabel">February</h2>
+                    <div class="calendar-controls">
+                        <button class="btn-text" id="expandBtn" onclick="toggleCalendar()">Expand</button>
+                        <div class="nav-arrows">
+                            <span id="prevMonthBtn" onclick="changeMonth(-1)">&lt;</span>
+                            <span id="nextMonthBtn" onclick="changeMonth(1)">&gt;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="calendar-days" id="calendarGrid"></div>
+            </section>
+
+            <div class="main-content-grid">
+                <section class="workout-area">
+                    <h1><span id="selectedDayLabel">Today</span> <span class="routine-name" id="routineNameLabel">No Routine Set</span></h1>
+                    <div class="exercise-list" id="exerciseList">
+                        <!-- Dynamic exercises will be injected here -->
+                    </div>
+                    <button class="btn-primary" onclick="openModal('addExerciseModal')">Add Exercise</button>
+                </section>
+
+                <aside class="sidebar">
+                    <div class="side-card user-profile">
+                        <div class="avatar"></div>
+                        <div>
+                            <p id="userNameLabel">Guest</p>
+                            <button class="btn-link" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <h4>Daily Total Volume:</h4>
+                        <div style="height: 60px; display: flex; align-items: flex-end; gap: 6px; padding-top: 10px;">
+                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 60%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 30%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 80%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 50%; background: #1a1a1e; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 90%; background: var(--accent-blue); border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4>Volume Progress</h4>
+                            <select style="background: none; border: none; color: var(--text-muted); font-size: 10px; outline: none;">
+                                <option>Weekly</option>
+                            </select>
+                        </div>
+                        <div style="height: 100px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; overflow: hidden;">
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <path d="M0,80 Q25,60 50,70 T100,20" fill="none" stroke="var(--accent-blue)" stroke-width="2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="side-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4>Weekly Schedule</h4>
+                            <button class="btn-link" onclick="openModal('editRoutineModal')">Edit ✎</button>
+                        </div>
+                        <ul class="schedule-list">
+                            <!-- Dynamically populated -->
+                        </ul>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="addExerciseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Exercise</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Exercise Name</label>
+                    <input type="text" id="addExerciseName" class="form-input" placeholder="Exercise Name">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" id="addExerciseSets" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Reps</label>
+                    <input type="number" id="addExerciseReps" class="form-input" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="addExercise()">Add</button>
+                <button class="btn-secondary" onclick="closeModal('addExerciseModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editExerciseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Exercise</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Old Exercise</label>
+                    <input type="text" class="form-input" value="Bench Press">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" class="form-input" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Rep</label>
+                    <input type="number" class="form-input" value="10">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>New Exercise</label>
+                    <input type="text" class="form-input" placeholder="Exercise Name">
+                </div>
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" class="form-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Rep</label>
+                    <input type="number" class="form-input" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="applyEditExercise()">Apply</button>
+                <button class="btn-secondary" onclick="closeModal('editExerciseModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editRoutineModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; position: relative;">
+            <div class="modal-header">
+                <h2>Edit Weekly Routine</h2>
+            </div>
+            <div id="routineDaysList">
+                <!-- Days will be dynamically rendered here -->
+            </div>
+
+            <!-- Exercise Manager Overlay (Hidden by default) -->
+            <div id="exerciseManager" class="exercise-manager-overlay hidden">
+                <div class="modal-header">
+                    <h2 id="managerDayTitle">Monday Exercises</h2>
+                </div>
+                <div class="exercise-manager-list" id="managerExerciseList">
+                    <!-- Exercises for the day will be listed here -->
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <h4 style="font-size: 12px; margin-bottom: 10px; color: var(--text-muted);">Add New Exercise</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 60px 60px; gap: 10px;">
+                        <input type="text" id="mgrNewExName" class="form-input" placeholder="Name" style="padding: 8px;">
+                        <input type="number" id="mgrNewExSets" class="form-input" placeholder="Sets" style="padding: 8px;">
+                        <input type="number" id="mgrNewExReps" class="form-input" placeholder="Reps" style="padding: 8px;">
+                    </div>
+                    <button class="btn-primary" style="margin-top: 10px; padding: 8px;" onclick="addExerciseToManager()">Add Exercise</button>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 0;">
+                    <button class="btn-primary" onclick="saveExerciseManager()">Save</button>
+                    <button class="btn-secondary" onclick="closeExerciseManager()">Close</button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="saveWeeklyRoutine()">Confirm</button>
+                <button class="btn-secondary" onclick="closeModal('editRoutineModal')">Close</button>
+            </div>
+        </div>
+    </div>
+    <script src="/app.js"></script>
+</body>
+</html>
+

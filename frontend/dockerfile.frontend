@@ -1,0 +1,10 @@
+FROM nginx:alpine
+
+# 1. Clear out the default nginx landing page
+RUN rm -rf /usr/share/nginx/html/*
+
+# 2. Copy the contents of your frontend folder
+COPY ./frontend/ /usr/share/nginx/html/
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

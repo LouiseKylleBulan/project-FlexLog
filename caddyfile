@@ -1,4 +1,11 @@
-http://localhost:80 {
-    reverse_proxy /api/* backend:5000
-    reverse_proxy * frontend:80
+:80 {
+    # 1. API requests go to Node.js
+    handle /api/* {
+        reverse_proxy backend:5000
+    }
+
+    # 2. Everything else goes to the Frontend Nginx container
+    handle {
+        reverse_proxy frontend:80
+    }
 }
