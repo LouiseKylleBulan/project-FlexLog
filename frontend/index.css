@@ -174,6 +174,24 @@ body {
     font-weight: 500;
 }
 
+.routine-setup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #333;
+}
+
+.routine-name-input {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: white;
+    padding: 8px;
+    margin: 0 15px;
+    border-radius: 4px;
+}
+
 /* Exercise Cards */
 .exercise-list {
     display: flex;
@@ -223,6 +241,24 @@ body {
     cursor: pointer;
     color: var(--text-muted);
     position: relative;
+}
+.exercise-count-preview {
+    background: #1a1a1a;
+    color: #666;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    min-width: 100px;
+}
+
+.exercise-card.completed {
+    opacity: 0.6;
+    border-color: var(--accent-blue);
+}
+
+.strikethrough {
+    text-decoration: line-through;
+    color: var(--text-muted);
 }
 
 .dropdown-menu {
@@ -433,22 +469,24 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 15px; /* Added more breathing room between days */
     padding-bottom: 12px;
     border-bottom: 1px solid var(--border);
 }
 
 .routine-day-name {
     color: var(--accent-blue);
-    font-weight: 600;
+    font-weight: 700; /* Made bolder to match image */
     text-transform: uppercase;
     font-size: 13px;
-    width: 100px;
+    width: 110px; /* Fixed width to keep inputs aligned */
 }
 
 .routine-day-controls {
     display: flex;
-    gap: 10px;
+    gap: 12px; /* Spacing between 'Routine Name' and 'Exercises' */
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .input-small {
@@ -512,6 +550,56 @@ body {
     border-radius: 10px;
     margin-bottom: 8px;
 }
+/* Container for the checkbox and triple-dot menu */
+.exercise-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Custom Styled Checkbox */
+.exercise-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: var(--input-bg);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.exercise-checkbox:checked {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+/* Checkmark drawing */
+.exercise-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Visual feedback for completed rows */
+.exercise-card.completed {
+    opacity: 0.6;
+    border-color: var(--accent-blue);
+}
+
+.strikethrough {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
 .auth-container {
     height: 100vh;
     display: flex;

@@ -1,0 +1,35 @@
+async function signup() {
+    try {
+        // Target the signup card first to narrow the scope
+        const signupCard = document.getElementById('signupCard');
+        
+        // Select all inputs within that card
+        const inputs = signupCard.querySelectorAll('.form-input');
+        
+        // Use indices based on the order in your HTML
+        const username = inputs[0].value; // First input: flexuser
+        const email = inputs[1].value;    // Second input: email
+        const password = inputs[2].value; // Third input: password
+
+        // Validation to prevent empty submissions
+        if (!username || !email || !password) {
+            return alert("Please fill in all fields.");
+        }
+
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        if (res.ok) {
+            alert("Account created! Please log in.");
+            toggleAuth(); // Switches back to the login screen
+        } else {
+            const data = await res.json();
+            alert(data.error || 'Signup failed');
+        }
+    } catch (err) {
+        console.error("Signup Script Error:", err);
+    }
+}

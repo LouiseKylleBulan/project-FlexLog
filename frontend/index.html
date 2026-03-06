@@ -80,7 +80,10 @@
 
             <div class="main-content-grid">
                 <section class="workout-area">
-                    <h1><span id="selectedDayLabel">Today</span> <span class="routine-name" id="routineNameLabel">No Routine Set</span></h1>
+                    <div class="section-header">
+                        <h2 id="dateHeadingLabel">Today</h2> 
+                        <span class="routine-badge" id="routineNameLabel">No Routine Set</span>
+                    </div>
                     <div class="exercise-list" id="exerciseList">
                         <!-- Dynamic exercises will be injected here -->
                     </div>
@@ -133,6 +136,7 @@
             </div>
         </main>
     </div>
+    
 
     <!-- Modals -->
     <div id="addExerciseModal" class="modal-overlay">
@@ -230,7 +234,6 @@
                 </div>
 
                 <div class="modal-footer" style="margin-top: 0;">
-                    <button class="btn-primary" onclick="saveExerciseManager()">Save</button>
                     <button class="btn-secondary" onclick="closeExerciseManager()">Close</button>
                 </div>
             </div>
