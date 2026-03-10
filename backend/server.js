@@ -78,7 +78,16 @@ app.post('/api/auth/login', async (req, res) => {
 // --- Routine Routes ---
 app.get('/api/routines', authenticateToken, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM routine_templates WHERE user_id = $1', [req.user.user_id]);
+        // Fetch all routines for the user and join with their exercise templates
+        const result = await pool.query(`
+            SELECT rt.*, 
+            COALESCE(json_agg(et.*) FILTER (WHERE et.et_id IS NOT NULL), '[]') as exercises
+            FROM routine_templates rt
+            LEFT JOIN exercises_templates et ON rt.rt_id = et.rt_id
+            WHERE rt.user_id = $1
+            GROUP BY rt.rt_id
+        `, [req.user.user_id]);
+        
         res.json({ routines: result.rows });
     } catch (err) {
         res.status(500).json({ error: "Database error" });

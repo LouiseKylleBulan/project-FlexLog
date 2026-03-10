@@ -133,11 +133,18 @@ async function fetchRoutines() {
     });
     if (res.ok) {
         const data = await res.json();
+        // Reset local state
         weekDays.forEach(day => routines[day] = { name: '', exercises: [] });
+        
         data.routines.forEach(r => {
             routines[r.day_of_week] = { 
                 name: r.rt_name || '', 
-                exercises: Array.isArray(r.exercises) ? r.exercises : [] 
+                // Map DB template names to frontend names
+                exercises: r.exercises.map(ex => ({
+                    name: ex.et_name,    
+                    sets: ex.target_sets,
+                    reps: ex.target_reps
+                }))
             };
         });
         renderExercises();
