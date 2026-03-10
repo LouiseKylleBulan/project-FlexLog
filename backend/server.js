@@ -125,12 +125,13 @@ app.post('/api/routines/update', authenticateToken, async (req, res) => {
                 for (const ex of r.exercises) {
                     await pool.query(
                         `INSERT INTO exercises_templates
-                        (et_name, target_sets, target_reps, rt_id)
-                        VALUES ($1, $2, $3, $4)`,
+                        (et_name, target_sets, target_reps, target_weight, rt_id)
+                        VALUES ($1, $2, $3, $4, $5)`,
                         [
                             ex.name,
                             ex.sets,
                             ex.reps,
+                            ex.weight,
                             rtId
                         ]
                     );
@@ -169,8 +170,8 @@ app.get('/api/logs/:date', authenticateToken, async (req, res) => {
 
         // 2. Hydrate: If this is a new log (0 exercises), clone from the Master Template
         await pool.query(
-            `INSERT INTO daily_exercises (logs_id, de_name, actual_sets, actual_reps, status)
-             SELECT $1, et_name, target_sets, target_reps, 'Pending'
+            `INSERT INTO daily_exercises (logs_id, de_name, actual_sets, actual_reps, status, et_id, actual_weight)
+            SELECT $1, et_name, target_sets, target_reps, 'Pending', et_id, target_weight
              FROM exercises_templates
              WHERE rt_id = (
                  SELECT rt_id FROM routine_templates 
@@ -199,23 +200,30 @@ app.get('/api/logs/:date', authenticateToken, async (req, res) => {
 
 app.post('/api/logs/:logId/exercise', authenticateToken, async (req, res) => {
     const { logId } = req.params;
-    const { name, sets, reps } = req.body;
+    const { name, sets, reps, weight } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO daily_exercises (logs_id, de_name, actual_sets, actual_reps, status)
-             VALUES ($1, $2, $3, $4, 'Pending') RETURNING *`,
-            [logId, name, sets, reps]
+            `INSERT INTO daily_exercises (logs_id, de_name, actual_sets, actual_reps, actual_weight, status)
+             VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
+            [logId, name, sets, reps, weight]
         );
         res.json(result.rows[0]);
     } catch (err) {
-        res.status(500).json({ error: "Failed to add daily exercise" });
+        res.status(500).json({ error: "Failed to add exercise" });
     }
 });
 
+// Update this route in server.js
 app.delete('/api/exercises/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
-        // Only delete from daily_exercises to keep the Master template safe
+        // Fetch the exercise to check if it's a template instance
+        const check = await pool.query('SELECT et_id FROM daily_exercises WHERE de_id = $1', [id]);
+        
+        if (check.rows.length > 0 && check.rows[0].et_id !== null) {
+            return res.status(403).json({ error: "Cannot delete pre-planned exercises to maintain routine integrity." });
+        }
+
         await pool.query('DELETE FROM daily_exercises WHERE de_id = $1', [id]);
         res.json({ success: true });
     } catch (err) {
@@ -260,6 +268,39 @@ app.patch('/api/exercises/:id/status', authenticateToken, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: "Update failed" });
+    }
+});
+
+app.get('/api/analytics/volume', authenticateToken, async (req, res) => {
+    const { range } = req.query;
+    const userId = req.user.user_id;
+    let query = "";
+
+    if (range === 'weekly') {
+        // FIX: Label as abbreviated Day names (Mon, Tue...)
+        query = `SELECT TO_CHAR(workout_date, 'Dy') as label, log_total_volume as value 
+                 FROM view_log_volume 
+                 WHERE user_id = $1 AND workout_date > CURRENT_DATE - INTERVAL '7 days'
+                 ORDER BY workout_date ASC`;
+    } else if (range === 'monthly') {
+        // FIX: Label as Week numbers (W1, W2...)
+        query = `SELECT 'W' || TO_CHAR(workout_date, 'W') as label, SUM(log_total_volume) as value 
+                 FROM view_log_volume 
+                 WHERE user_id = $1 AND TO_CHAR(workout_date, 'YYYY-MM') = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                 GROUP BY label, TO_CHAR(workout_date, 'W') ORDER BY TO_CHAR(workout_date, 'W') ASC`;
+    } else if (range === 'yearly') {
+        // FIX: Label as abbreviated Month names (Jan, Feb...)
+        query = `SELECT TO_CHAR(workout_date, 'Mon') as label, SUM(log_total_volume) as value 
+                 FROM view_log_volume 
+                 WHERE user_id = $1 AND TO_CHAR(workout_date, 'YYYY') = TO_CHAR(CURRENT_DATE, 'YYYY')
+                 GROUP BY label, TO_CHAR(workout_date, 'MM') ORDER BY TO_CHAR(workout_date, 'MM') ASC`;
+    }
+
+    try {
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: "Analytics fetch failed" });
     }
 });
 

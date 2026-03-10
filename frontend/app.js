@@ -211,6 +211,9 @@ async function showDashboard() {
     renderCalendar();
     renderExercises();
     updateSidebarSchedule();
+    updateDailyVolumeBars();
+    updateProgressChart();
+    updateProgressSummary();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -235,11 +238,12 @@ async function renderExercises() {
 
     // Call the function that handles the HTML generation
     renderExerciseCards(data.exercises);
+    updateDailyVolumeDisplay(data.exercises);
 }
 
 function renderExerciseCards(exercises) {
     const list = document.getElementById('exerciseList');
-    list.innerHTML = ''; // Clear the list first
+    list.innerHTML = '';
 
     if (!exercises || exercises.length === 0) {
         list.innerHTML = '<p class="empty-msg">No exercises for this day.</p>';
@@ -248,54 +252,77 @@ function renderExerciseCards(exercises) {
 
     exercises.forEach((ex) => {
         const isDone = ex.status === 'Completed';
+        const isPrePlanned = ex.et_id !== null;
+
         const card = document.createElement('div');
-        // If completed, add the 'completed' class for the opacity/border effect
         card.className = `exercise-card ${isDone ? 'completed' : ''}`;
-        
+
         card.innerHTML = `
             <div class="exercise-info">
                 <div class="exercise-icon"><i data-lucide="dumbbell"></i></div>
                 <div class="exercise-details">
                     <h3 class="${isDone ? 'strikethrough' : ''}">${ex.de_name}</h3>
-                    <p>${ex.actual_sets} Sets • ${ex.actual_reps} Reps</p>
+                    <p>${ex.actual_sets} Sets • ${ex.actual_reps} Reps • ${ex.actual_weight || 0} kg</p>
                 </div>
             </div>
+
             <div class="exercise-actions-group">
-                <input type="checkbox" class="exercise-checkbox" ${isDone ? 'checked' : ''} 
+                <input type="checkbox" class="exercise-checkbox" ${isDone ? 'checked' : ''}
                     onclick="toggleExerciseStatus(${ex.de_id}, this.checked)">
-                <div class="exercise-actions" onclick="toggleDropdown(event, ${ex.de_id})">
-                    <i data-lucide="more-vertical"></i>
-                    <div class="dropdown-menu" id="dropdown-${ex.de_id}">
-                        <div class="dropdown-item delete" onclick="deleteDailyExercise(${ex.de_id})">Delete</div>
+
+                ${!isPrePlanned ? `
+                    <div class="exercise-actions" onclick="toggleDropdown(event, ${ex.de_id})">
+                        <i data-lucide="more-vertical"></i>
+                        <div class="dropdown-menu" id="dropdown-${ex.de_id}">
+                            <div class="dropdown-item delete" onclick="deleteDailyExercise(${ex.de_id}, false)">Delete</div>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-        
+                ` : ''}
+            </div>
+        `;
+
         list.appendChild(card);
     });
 
-    // Re-initialize icons so Lucide knows to draw the dumbbells and dots
     if (window.lucide) lucide.createIcons();
 }
 
 async function toggleExerciseStatus(id, isChecked) {
     const status = isChecked ? 'Completed' : 'Pending';
+
     const token = localStorage.getItem('flexlog_token');
+
     await fetch(`/api/exercises/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status })
     });
-    renderExercises(); // Refresh UI
+
+    await renderExercises();
+
+    updateDailyVolumeBars();
+    updateProgressChart();
+    updateProgressSummary();
 }
 
-async function deleteDailyExercise(id) {
+async function deleteDailyExercise(id, isPrePlanned) {
+    if (isPrePlanned) {
+        alert("You cannot delete planned exercises.");
+        return;
+    }
+
     if (!confirm("Delete this exercise?")) return;
+
     const token = localStorage.getItem('flexlog_token');
+
     const res = await fetch(`/api/exercises/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
+
     if (res.ok) renderExercises();
 }
 
@@ -326,14 +353,23 @@ function openExerciseManager(day) {
     currentManagingDay = day; 
     const title = document.getElementById('managerDayTitle');
     if (title) title.innerText = `${day} Exercises`;
+    
     renderManagerList(); 
+    
     const managerOverlay = document.getElementById('exerciseManager');
-    if (managerOverlay) managerOverlay.classList.remove('hidden');
+    if (managerOverlay) {
+        managerOverlay.classList.remove('hidden');
+        // Optional: Hide the background list to prevent scrolling issues
+        document.getElementById('routineDaysList').style.visibility = 'hidden';
+    }
 }
 
 function closeExerciseManager() {
     const managerOverlay = document.getElementById('exerciseManager');
-    if (managerOverlay) managerOverlay.classList.add('hidden');
+    if (managerOverlay) {
+        managerOverlay.classList.add('hidden');
+        document.getElementById('routineDaysList').style.visibility = 'visible';
+    }
 }
 
 function renderManagerList() {
@@ -401,19 +437,21 @@ async function addExercise() {
     const name = document.getElementById('addExerciseName').value;
     const sets = document.getElementById('addExerciseSets').value;
     const reps = document.getElementById('addExerciseReps').value;
+    const weight = document.getElementById('addExerciseWeight').value; // New
     
-    if (!name || !sets || !reps || !currentLogId) return alert("Missing data");
+    if (!name || !sets || !reps || !weight || !currentLogId) return alert("Missing data");
 
     const token = localStorage.getItem('flexlog_token');
     const res = await fetch(`/api/logs/${currentLogId}/exercise`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name, sets, reps })
+        body: JSON.stringify({ name, sets, reps, weight })
     });
 
     if (res.ok) {
         closeModal('addExerciseModal');
         renderExercises();
+        updateProgressSummary(); // Refresh summary
     }
 }
 
@@ -463,6 +501,112 @@ function updateSidebarSchedule() {
     });
 }
 
+async function updateDailyVolumeBars() {
+    const token = localStorage.getItem('flexlog_token');
+    // Fetch last 7 days of volume
+    const res = await fetch('/api/analytics/volume?range=weekly', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    // Select the bar container
+    const container = document.getElementById('dailyVolumeBarContainer');
+    if (!container) return;
+    container.innerHTML = ''; 
+
+    const maxVolume = Math.max(...data.map(d => d.value), 1000); 
+
+    data.forEach(day => {
+        const heightPercentage = (day.value / maxVolume) * 100;
+        const bar = document.createElement('div');
+        bar.style.flex = "1";
+        bar.style.height = `${Math.max(heightPercentage, 5)}%`; 
+        // Highlight the bar if it matches the currently selected date in the calendar
+        const isSelected = day.date === selectedDate.toISOString().split('T')[0];
+        bar.style.background = isSelected ? "var(--accent-blue)" : "#1a1a1e";
+        bar.style.borderRadius = "4px";
+        bar.title = `${day.label}: ${day.value} volume`;
+        container.appendChild(bar);
+    });
+}
+
+async function updateProgressChart() {
+    const range = document.getElementById('progressRangeSelect').value;
+    const token = localStorage.getItem('flexlog_token');
+    
+    const res = await fetch(`/api/analytics/volume?range=${range}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const path = document.querySelector('#progressLineChart path');
+    const labelContainer = document.getElementById('progressLabels');
+    
+    // Clear previous state
+    labelContainer.innerHTML = '';
+    if (!data || data.length === 0) {
+        path.setAttribute('d', 'M0,100 L100,100');
+        return;
+    }
+
+    const maxVal = Math.max(...data.map(d => d.value), 1);
+    
+    // 1. Generate Line Path
+    let coords = data.map((point, i) => {
+        const x = (i / (data.length - 1)) * 100;
+        const y = 100 - ((point.value / maxVal) * 100);
+        return `${x},${y}`;
+    }).join(' L');
+    path.setAttribute('d', `M${coords}`);
+
+    // 2. Inject Correct Labels
+    data.forEach((point) => {
+        const span = document.createElement('span');
+        span.style.fontSize = '9px';
+        span.style.color = 'var(--text-muted)';
+        if (range === "yearly") {
+            span.innerText = months[point.label - 1];
+        } else {
+            span.innerText = point.label;
+        }
+        labelContainer.appendChild(span);
+    });
+}
+
+async function updateProgressSummary() {
+    const token = localStorage.getItem('flexlog_token');
+    const res = await fetch('/api/analytics/compare-weeks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    const data = await res.json();
+    const summaryLabel = document.getElementById('summaryText');
+    const diff = data.diff || 0;
+
+    if (diff > 0) {
+        summaryLabel.innerHTML = `You've <span class="status-improved">improved</span> by ${diff.toLocaleString()} kg from last week!`;
+    } else if (diff < 0) {
+        summaryLabel.innerHTML = `You're <span class="status-behind">behind</span> by ${Math.abs(diff).toLocaleString()} kg from last week.`;
+    } else {
+        summaryLabel.innerHTML = `<span class="status-neutral">Consistent volume</span> from last week.`;
+    }
+}
+
+async function updateDailyVolumeDisplay(exercises) {
+    const display = document.getElementById('dailyVolumeDisplay');
+    if (!display) return;
+
+    // Calculate sum only for exercises marked 'Completed'
+    const total = exercises.reduce((acc, ex) => {
+        if (ex.status === 'Completed') {
+            return acc + (ex.actual_sets * ex.actual_reps * (ex.actual_weight || 0));
+        }
+        return acc;
+    }, 0);
+
+    display.innerText = total.toLocaleString();
+}
+
 function changeMonth(offset) {
     viewDate.setMonth(viewDate.getMonth() + offset);
     renderCalendar();
@@ -471,4 +615,22 @@ function changeMonth(offset) {
 window.onload = () => {
     weekDays.forEach(day => routines[day] = { name: '', exercises: [] });
     checkAuth();
+
+    /* ===== INPUT VALIDATION (ADDED) ===== */
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+
+        // Prevent typing invalid characters
+        input.addEventListener("keydown", function(e) {
+            if (["e", "E", "+", "-", "."].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean pasted values
+        input.addEventListener("input", function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+    });
+    /* ===== END OF ADDED CODE ===== */
 };

@@ -98,31 +98,38 @@
                             <button class="btn-link" onclick="logout()">Logout</button>
                         </div>
                     </div>
+
                     <div class="side-card">
                         <h4>Daily Total Volume:</h4>
-                        <div style="height: 60px; display: flex; align-items: flex-end; gap: 6px; padding-top: 10px;">
-                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 60%; background: #1a1a1e; border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 30%; background: #1a1a1e; border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 80%; background: #1a1a1e; border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 50%; background: #1a1a1e; border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 90%; background: var(--accent-blue); border-radius: 4px;"></div>
-                            <div style="flex: 1; height: 40%; background: #1a1a1e; border-radius: 4px;"></div>
+                        <div style="padding-top: 10px;">
+                            <span id="dailyVolumeDisplay" style="font-size: 32px; font-weight: 700; color: var(--accent-blue);">0</span>
+                            <span style="color: var(--text-muted); font-size: 14px; margin-left: 5px;">kg</span>
                         </div>
                     </div>
+                    
                     <div class="side-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4>Volume Progress</h4>
-                            <select style="background: none; border: none; color: var(--text-muted); font-size: 10px; outline: none;">
-                                <option>Weekly</option>
+                            <select id="progressRangeSelect" onchange="updateProgressChart()">
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
                             </select>
                         </div>
-                        <div style="height: 100px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; overflow: hidden;">
-                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                <path d="M0,80 Q25,60 50,70 T100,20" fill="none" stroke="var(--accent-blue)" stroke-width="2" />
+                        
+                        <div style="height: 100px; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative;">
+                            <svg id="progressLineChart" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <path d="M0,100 L100,100" fill="none" stroke="var(--accent-blue)" stroke-width="2" />
                             </svg>
                         </div>
+                    
+                        <div id="progressLabels" style="display: flex; justify-content: space-between; margin-top: 8px; padding: 0 5px;"></div>
+                        
+                        <div id="progressSummary" class="progress-summary-text">
+                            <p id="summaryText">Calculating progress...</p>
+                        </div>
                     </div>
+
                     <div class="side-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4>Weekly Schedule</h4>
@@ -140,67 +147,29 @@
 
     <!-- Modals -->
     <div id="addExerciseModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add Exercise</h2>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header"><h2>Add Exercise</h2></div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px;">
                 <div class="form-group">
                     <label>Exercise Name</label>
-                    <input type="text" id="addExerciseName" class="form-input" placeholder="Exercise Name">
+                    <input type="text" id="addExerciseName" class="form-input" placeholder="Name">
                 </div>
                 <div class="form-group">
                     <label>Sets</label>
-                    <input type="number" id="addExerciseSets" class="form-input" placeholder="0">
+                    <input type="number" id="addExerciseSets" class="form-input" placeholder="0" min="0" step="1" inputmode="numeric">
                 </div>
                 <div class="form-group">
                     <label>Reps</label>
-                    <input type="number" id="addExerciseReps" class="form-input" placeholder="0">
+                    <input type="number" id="addExerciseReps" class="form-input" placeholder="0" min="0" step="1" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="addExerciseWeight" class="form-input" placeholder="0" min="0" step="1" inputmode="numeric">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="addExercise()">Add</button>
                 <button class="btn-secondary" onclick="closeModal('addExerciseModal')">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="editExerciseModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Edit Exercise</h2>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div class="form-group">
-                    <label>Old Exercise</label>
-                    <input type="text" class="form-input" value="Bench Press">
-                </div>
-                <div class="form-group">
-                    <label>Sets</label>
-                    <input type="number" class="form-input" value="3">
-                </div>
-                <div class="form-group">
-                    <label>Rep</label>
-                    <input type="number" class="form-input" value="10">
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div class="form-group">
-                    <label>New Exercise</label>
-                    <input type="text" class="form-input" placeholder="Exercise Name">
-                </div>
-                <div class="form-group">
-                    <label>Sets</label>
-                    <input type="number" class="form-input" placeholder="0">
-                </div>
-                <div class="form-group">
-                    <label>Rep</label>
-                    <input type="number" class="form-input" placeholder="0">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-primary" onclick="applyEditExercise()">Apply</button>
-                <button class="btn-secondary" onclick="closeModal('editExerciseModal')">Close</button>
             </div>
         </div>
     </div>
@@ -211,39 +180,37 @@
                 <h2>Edit Weekly Routine</h2>
             </div>
             <div id="routineDaysList">
-                <!-- Days will be dynamically rendered here -->
-            </div>
-
-            <!-- Exercise Manager Overlay (Hidden by default) -->
+                </div>
+    
             <div id="exerciseManager" class="exercise-manager-overlay hidden">
                 <div class="modal-header">
                     <h2 id="managerDayTitle">Monday Exercises</h2>
                 </div>
-                <div class="exercise-manager-list" id="managerExerciseList">
-                    <!-- Exercises for the day will be listed here -->
-                </div>
+                <div class="exercise-manager-list" id="managerExerciseList"></div>
                 
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-                    <h4 style="font-size: 12px; margin-bottom: 10px; color: var(--text-muted);">Add New Exercise</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 60px 60px; gap: 10px;">
-                        <input type="text" id="mgrNewExName" class="form-input" placeholder="Name" style="padding: 8px;">
-                        <input type="number" id="mgrNewExSets" class="form-input" placeholder="Sets" style="padding: 8px;">
-                        <input type="number" id="mgrNewExReps" class="form-input" placeholder="Reps" style="padding: 8px;">
+                <div class="manager-add-zone">
+                    <h4 class="small-label">Add New Exercise</h4>
+                    <div class="manager-input-grid">
+                        <input type="text" id="mgrNewExName" class="form-input" placeholder="Name">
+                        <input type="number" id="mgrNewExSets" class="form-input" placeholder="Set" min="0" step="1" inputmode="numeric">
+                        <input type="number" id="mgrNewExReps" class="form-input" placeholder="Rep" min="0" step="1" inputmode="numeric">
+                        <input type="number" id="mgrNewExWeight" class="form-input" placeholder="Kg" min="0" step="1" inputmode="numeric">
                     </div>
-                    <button class="btn-primary" style="margin-top: 10px; padding: 8px;" onclick="addExerciseToManager()">Add Exercise</button>
+                    <button class="btn-primary" onclick="addExerciseToManager()">Add Exercise</button>
                 </div>
-
-                <div class="modal-footer" style="margin-top: 0;">
+    
+                <div class="modal-footer" style="margin-top: 10px;">
                     <button class="btn-secondary" onclick="closeExerciseManager()">Close</button>
                 </div>
             </div>
-
+    
             <div class="modal-footer">
                 <button class="btn-primary" onclick="saveWeeklyRoutine()">Confirm</button>
                 <button class="btn-secondary" onclick="closeModal('editRoutineModal')">Close</button>
             </div>
         </div>
     </div>
+
     <script src="/app.js"></script>
 </body>
 </html>
